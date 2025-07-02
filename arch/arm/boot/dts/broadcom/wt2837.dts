@@ -1,0 +1,260 @@
+// SPDX-License-Identifier: GPL-2.0
+/dts-v1/;
+#include "bcm2837.dtsi"
+#include "bcm2836-rpi.dtsi"
+#include "bcm283x-rpi-led-deprecated.dtsi"
+#include "bcm283x-rpi-smsc9514.dtsi"
+#include "bcm283x-rpi-usb-host.dtsi"
+#include "bcm283x-rpi-wifi-bt.dtsi"
+
+/ {
+	compatible = "raspberrypi,3-model-b", "brcm,bcm2837";
+	model = "Raspberry Pi 3 Model B";
+
+	chosen {
+		/* 8250 auxiliary UART instead of pl011 */
+		stdout-path = "serial1:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0 0x40000000>;
+	};
+};
+
+&bt {
+	shutdown-gpios = <&expgpio 0 GPIO_ACTIVE_HIGH>;
+};
+
+&firmware {
+	expgpio: gpio {
+		compatible = "raspberrypi,firmware-gpio";
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-line-names = "BT_ON",
+				  "WL_ON",
+				  "STATUS_LED",
+				  "LAN_RUN",
+				  "HDMI_HPD_N",
+				  "CAM_GPIO0",
+				  "CAM_GPIO1",
+				  "PWR_LOW_N";
+		status = "okay";
+	};
+};
+
+&gpio {
+	/*
+	 * Taken from rpi_SCH_3b_1p2_reduced.pdf and
+	 * the official GPU firmware DT blob.
+	 *
+	 * Legend:
+	 * "FOO" = GPIO line named "FOO" on the schematic
+	 * "FOO_N" = GPIO line named "FOO" on schematic, active low
+	 */
+	gpio-line-names = "ID_SDA",
+			  "ID_SCL",
+			  "SDA1",
+			  "SCL1",
+			  "GPIO_GCLK",
+			  "GPIO5",
+			  "GPIO6",
+			  "SPI_CE1_N",
+			  "SPI_CE0_N",
+			  "SPI_MISO",
+			  "SPI_MOSI",
+			  "SPI_SCLK",
+			  "GPIO12",
+			  "GPIO13",
+			  /* Serial port */
+			  "TXD1",
+			  "RXD1",
+			  "GPIO16",
+			  "GPIO17",
+			  "GPIO18",
+			  "GPIO19",
+			  "GPIO20",
+			  "GPIO21",
+			  "GPIO22",
+			  "GPIO23",
+			  "GPIO24",
+			  "GPIO25",
+			  "GPIO26",
+			  "GPIO27",
+			  "", /* GPIO 28 */
+			  "LAN_RUN_BOOT",
+			  /* Used by BT module */
+			  "CTS0",
+			  "RTS0",
+			  "TXD0",
+			  "RXD0",
+			  /* Used by Wifi */
+			  "SD1_CLK",
+			  "SD1_CMD",
+			  "SD1_DATA0",
+			  "SD1_DATA1",
+			  "SD1_DATA2",
+			  "SD1_DATA3",
+			  "PWM0_OUT",
+			  "PWM1_OUT",
+			  "ETH_CLK",
+			  "WIFI_CLK",
+			  "SDA0",
+			  "SCL0",
+			  "SMPS_SCL",
+			  "SMPS_SDA",
+			  /* Used by SD Card */
+			  "SD_CLK_R",
+			  "SD_CMD_R",
+			  "SD_DATA0_R",
+			  "SD_DATA1_R",
+			  "SD_DATA2_R",
+			  "SD_DATA3_R";
+
+/* [seolryeong : start] DT support pins */
+/*	spi0_pins: spi0_pins {
+		brcm,pins = <9 10 11>;
+		brcm,function = <4>;
+	};
+	spi0_cs_pins: spi0_cs_pins {
+		brcm,pins = <8 7>;
+		brcm,function = <1>;
+	};
+        i2c0_pins: i2c0 {
+                brcm,pins = <0 1>;
+                brcm,function = <4>;
+        };
+
+        i2c1_pins: i2c1 {
+                brcm,pins = <2 3>;
+                brcm,function = <4>;
+        };
+
+        i2s_pins: i2s {
+                brcm,pins = <18 19 20 21>;
+                brcm,function = <4>;
+        };
+
+        sdio_pins: sdio_pins {
+                brcm,pins =     <34 35 36 37 38 39>;
+                brcm,function = <7>;
+                brcm,pull =     <0 2 2 2 2 2>;
+        };
+
+        bt_pins: bt_pins {
+                brcm,pins = <43>;
+                brcm,function = <4>;
+                brcm,pull = <0>;
+        };
+
+        uart0_pins: uart0_pins {
+                brcm,pins = <32 33>;
+                brcm,function = <7>;
+                brcm,pull = <0 2>;
+        };
+
+        uart1_pins: uart1_pins {
+                brcm,pins;
+                brcm,function;
+                brcm,pull;
+        };
+
+        uart1_bt_pins: uart1_bt_pins {
+                brcm,pins = <32 33>;
+                brcm,function = <BCM2835_FSEL_ALT5>;
+                brcm,pull = <0 2>;
+        };
+        audio_pins: audio_pins {
+                brcm,pins = <40 41>;
+                brcm,function = <4>;
+                brcm,pull = <0>;
+        };
+*/
+/* [seolryeong : end] */
+
+};
+
+// [seolryeong : start] DT support accelerometer
+/*
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
+	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
+
+        lis302@0 {
+                compatible = "st,lis302dl-spi";
+                reg = <0>;
+                spi-max-frequency = <1000000>;
+                interrupt-parent = <&gpio>;
+                interrupts = <104 0>;
+
+                st,click-single-x;
+                st,click-single-y;
+                st,click-single-z;
+                st,click-thresh-x = <10>;
+                st,click-thresh-y = <10>;
+                st,click-thresh-z = <10>;
+                //st,wakeup-threshold = <100>;
+                st,irq1-click;
+                st,irq2-click;
+                st,wakeup-x-lo;
+                st,wakeup-x-hi;
+                st,wakeup-y-lo;
+                st,wakeup-y-hi;
+                st,wakeup-z-lo;
+                st,wakeup-z-hi;
+        };
+
+
+        spidev1: spidev@1{
+                compatible = "spidev";
+                reg = <1>;
+                #address-cells = <1>;
+                #size-cells = <0>;
+                spi-max-frequency = <125000000>;
+        };
+
+};
+*/
+// [seolryeong : end]
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm0_gpio40 &pwm1_gpio41>;
+	status = "okay";
+};
+
+&hdmi {
+	hpd-gpios = <&expgpio 4 GPIO_ACTIVE_LOW>;
+	power-domains = <&power RPI_POWER_DOMAIN_HDMI>;
+	status = "okay";
+};
+
+&led_act {
+	gpios = <&expgpio 2 GPIO_ACTIVE_HIGH>;
+};
+
+/* uart0 communicates with the BT module */
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_gpio32 &gpclk2_gpio43>;
+};
+
+/* uart1 is mapped to the pin header */
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_gpio14>;
+	status = "okay";
+};
+
+/* SDHOST is used to drive the SD card */
+&sdhost {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdhost_gpio48>;
+	status = "okay";
+	bus-width = <4>;
+};
+
+&wifi_pwrseq {
+	reset-gpios = <&expgpio 1 GPIO_ACTIVE_LOW>;
+};
