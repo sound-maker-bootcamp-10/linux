@@ -25,10 +25,10 @@
 static int lis3_spi_read(struct lis3lv02d *lis3, int reg, u8 *v)
 {
 	struct spi_device *spi = lis3->bus_priv;
+	
 	int ret = spi_w8r8(spi, reg | LIS3_SPI_READ);
 	if (ret < 0)
 		return -EINVAL;
-
 	*v = (u8) ret;
 	return 0;
 }
@@ -44,7 +44,7 @@ static int lis3_spi_init(struct lis3lv02d *lis3)
 {
 	u8 reg;
 	int ret;
-
+	
 	/* power up the device */
 	ret = lis3->read(lis3, CTRL_REG1, &reg);
 	if (ret < 0)
@@ -82,7 +82,7 @@ static int lis302dl_spi_probe(struct spi_device *spi)
 	lis3_dev.irq		= spi->irq;
 	lis3_dev.ac		= lis3lv02d_axis_normal;
 	lis3_dev.pdata		= spi->dev.platform_data;
-
+	
 #ifdef CONFIG_OF
 	if (of_match_device(lis302dl_spi_dt_ids, &spi->dev)) {
 		lis3_dev.of_node = spi->dev.of_node;
@@ -103,6 +103,12 @@ static void lis302dl_spi_remove(struct spi_device *spi)
 	lis3lv02d_poweroff(lis3);
 
 	lis3lv02d_remove_fs(&lis3_dev);
+
+
+	// [seolryeong : start]
+	cdev_del(sr_cdev);
+	unregister_chrdev_region(sr_devt, device_minor_count);
+	// [seolryeong : end]
 }
 
 #ifdef CONFIG_PM_SLEEP

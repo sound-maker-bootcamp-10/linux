@@ -265,6 +265,10 @@ struct lis3lv02d {
 	int (*read) (struct lis3lv02d *lis3, int reg, u8 *ret);
 	int (*blkread) (struct lis3lv02d *lis3, int reg, int len, u8 *ret);
 	int (*reg_ctrl) (struct lis3lv02d *lis3, bool state);
+	
+	// [seolryeong : start] add ioctl
+	int (*ioctl) (struct lis3lv02d *lis3, int cmd);
+	// [seolryeong : end]
 
 	int                     *odrs;     /* Supported output data rates */
 	u8			*regs;	   /* Regs to store / restore */
@@ -316,3 +320,14 @@ void lis3lv02d_remove_fs(struct lis3lv02d *lis3);
 int lis3lv02d_init_dt(struct lis3lv02d *lis3);
 
 extern struct lis3lv02d lis3_dev;
+
+
+// [seolryeong : start]
+#include <linux/cdev.h> 
+static int device_minor_count = 1; 
+static int device_major = 120;
+static int device_minor_start = 5;
+
+extern dev_t sr_devt;
+extern struct cdev *sr_cdev;
+// [seolryeong : end]

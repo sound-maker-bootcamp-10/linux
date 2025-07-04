@@ -88,6 +88,17 @@
 #define GPIO_ACCEL 528	// Linux-6.12 (512 + 16)
 int irq_key1;
 #define SR_DEBUG 0
+wait_queue_head_t int_wait;
+DECLARE_WAIT_QUEUE_HEAD(int_wait);
+//EXPORT_SYMBOL(int_wait);
+int int_condition = 0;
+//EXPORT_SYMBOL(int_condition);
+
+#include <linux/cdev.h>
+dev_t sr_devt;
+struct cdev *sr_cdev;
+EXPORT_SYMBOL(sr_devt);
+EXPORT_SYMBOL(sr_cdev);
 // [seolryeong : end]
 
 struct lis3lv02d lis3_dev = {
@@ -494,7 +505,13 @@ static void lis3lv02d_joystick_close(struct input_dev *input)
 static irqreturn_t lis302dl_interrupt(int irq, void *data)
 {
 	struct lis3lv02d *lis3 = data;
+	
+	// [seolryeong : start]
+	int_condition = 1;
+	wake_up_interruptible(&int_wait);
+	// [seolryeong : end]
 
+#if 0
 	if (!test_bit(0, &lis3->misc_opened))
 		goto out;
 
@@ -510,6 +527,7 @@ static irqreturn_t lis302dl_interrupt(int irq, void *data)
 out:
 	if (atomic_read(&lis3->wake_thread))
 		return IRQ_WAKE_THREAD;
+#endif
 	return IRQ_HANDLED;
 }
 
@@ -554,9 +572,6 @@ static irqreturn_t lis302dl_interrupt_thread1_8b(int irq, void *data)
 	u8 irq_cfg = lis3->irq_cfg & LIS3_IRQ1_MASK;
 
 	if (irq_cfg == LIS3_IRQ1_CLICK) {
-#if SR_DEBUG
-		printk("[seolryeong : debug] CLICK interrupt\n");
-#endif
 		lis302dl_interrupt_handle_click(lis3);
 	}
 	else if (unlikely(irq_cfg == LIS3_IRQ1_DATA_READY))
@@ -1131,6 +1146,21 @@ EXPORT_SYMBOL_GPL(lis3lv02d_init_dt);
  * Initialise the accelerometer and the various subsystems.
  * Should be rather independent of the bus system.
  */
+
+// [seolryeong : start]
+static ssize_t sr_dev_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos) {
+        int ret = wait_event_interruptible(int_wait, int_condition == 1);
+        int_condition = 0;
+        return (0);
+}
+
+static const struct file_operations sr_fops = {
+        .owner = THIS_MODULE,
+        .read = sr_dev_read,
+};
+// [seolryeong : end]
+
+
 int lis3lv02d_init_device(struct lis3lv02d *lis3)
 {
 	int err;
@@ -1232,10 +1262,21 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
         irq_key1 = gpio_to_irq(GPIO_ACCEL);
 	if (irq_key1)
                 lis3->irq = irq_key1;
-#if SR_DEBUG
-	printk("[seolryeong : debug] irq_key1 : %d\n", irq_key1);
-#endif
-        // [seolryeong : end]
+        
+	int ret1;
+        sr_devt = MKDEV(device_major, device_minor_start);
+        ret1 = register_chrdev_region(sr_devt, device_minor_count, "sr_device");
+        if (ret1 < 0) {
+                printk("[seolryeong : debug] sr_device: can't get major %d\n", device_major);
+        }
+        sr_cdev = cdev_alloc();
+        sr_cdev->ops = &sr_fops;
+        sr_cdev->owner = THIS_MODULE;
+        ret1 = cdev_add(sr_cdev, sr_devt, device_minor_count);
+        if(ret1) {
+                printk("[seolryeong : debug] can't add device %d\n", ret1);
+        }
+	// [seolryeong : end]
 
 
 	/* bail if we did not get an IRQ from the bus layer */
@@ -1255,6 +1296,7 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
 	 * io-apic is not configurable (and generates a warning) but I keep it
 	 * in case of support for other hardware.
 	 */
+	
 	if (lis3->pdata && lis3->whoami == WAI_8B)
 		thread_fn = lis302dl_interrupt_thread1_8b;
 	else
