@@ -82,6 +82,14 @@
 #define LIS3_DEFAULT_FUZZ_8B		1
 #define LIS3_DEFAULT_FLAT_8B		1
 
+// [seolryeong : start] add irq
+#include <linux/gpio.h>
+//#define GPIO_KEY 16	// Linux-6.1
+#define GPIO_ACCEL 528	// Linux-6.12 (512 + 16)
+int irq_key1;
+#define SR_DEBUG 0
+// [seolryeong : end]
+
 struct lis3lv02d lis3_dev = {
 	.misc_wait   = __WAIT_QUEUE_HEAD_INITIALIZER(lis3_dev.misc_wait),
 };
@@ -545,8 +553,12 @@ static irqreturn_t lis302dl_interrupt_thread1_8b(int irq, void *data)
 	struct lis3lv02d *lis3 = data;
 	u8 irq_cfg = lis3->irq_cfg & LIS3_IRQ1_MASK;
 
-	if (irq_cfg == LIS3_IRQ1_CLICK)
+	if (irq_cfg == LIS3_IRQ1_CLICK) {
+#if SR_DEBUG
+		printk("[seolryeong : debug] CLICK interrupt\n");
+#endif
 		lis302dl_interrupt_handle_click(lis3);
+	}
 	else if (unlikely(irq_cfg == LIS3_IRQ1_DATA_READY))
 		lis302dl_data_ready(lis3, IRQ_LINE0);
 	else
@@ -1215,6 +1227,16 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
 		if (p->default_rate)
 			lis3lv02d_set_odr(lis3, p->default_rate);
 	}
+
+        // [seolryeong : start] accelerometer IRQ enable
+        irq_key1 = gpio_to_irq(GPIO_ACCEL);
+	if (irq_key1)
+                lis3->irq = irq_key1;
+#if SR_DEBUG
+	printk("[seolryeong : debug] irq_key1 : %d\n", irq_key1);
+#endif
+        // [seolryeong : end]
+
 
 	/* bail if we did not get an IRQ from the bus layer */
 	if (!lis3->irq) {

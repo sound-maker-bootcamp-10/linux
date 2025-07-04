@@ -112,7 +112,7 @@
 			  "SD_DATA3_R";
 
 /* [seolryeong : start] DT support pins */
-/*	spi0_pins: spi0_pins {
+	spi0_pins: spi0_pins {
 		brcm,pins = <9 10 11>;
 		brcm,function = <4>;
 	};
@@ -169,34 +169,35 @@
                 brcm,function = <4>;
                 brcm,pull = <0>;
         };
-*/
+
 /* [seolryeong : end] */
 
 };
 
 // [seolryeong : start] DT support accelerometer
-/*
-&spi0 {
+
+&spi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_pins &spi0_cs_pins>;
 	cs-gpios = <&gpio 8 1>, <&gpio 7 1>;
-
-        lis302@0 {
+        
+	lis302@0 {
                 compatible = "st,lis302dl-spi";
                 reg = <0>;
                 spi-max-frequency = <1000000>;
                 interrupt-parent = <&gpio>;
-                interrupts = <104 0>;
-
+                //interrupts = <104 0>;
+                interrupts = <16 1>;
+		
+		// [seolryenog] click interrupt
+                st,irq1-click;
                 st,click-single-x;
                 st,click-single-y;
                 st,click-single-z;
-                st,click-thresh-x = <10>;
-                st,click-thresh-y = <10>;
-                st,click-thresh-z = <10>;
-                //st,wakeup-threshold = <100>;
-                st,irq1-click;
-                st,irq2-click;
+                st,click-thresh-x = <2>;
+                st,click-thresh-y = <2>;
+                st,click-thresh-z = <2>;
+
                 st,wakeup-x-lo;
                 st,wakeup-x-hi;
                 st,wakeup-y-lo;
@@ -204,7 +205,6 @@
                 st,wakeup-z-lo;
                 st,wakeup-z-hi;
         };
-
 
         spidev1: spidev@1{
                 compatible = "spidev";
@@ -215,7 +215,7 @@
         };
 
 };
-*/
+
 // [seolryeong : end]
 
 &pwm {

@@ -127,7 +127,7 @@
 			#interrupt-cells = <2>;
 
 			gpio-ranges = <&gpio 0 0 54>;
-
+			status = "okay";	// [seolryeong] add status to gpio
 			/* Defines common pin muxing groups
 			 *
 			 * While each pin can have its mux selected
@@ -333,7 +333,7 @@
 			clocks = <&clocks BCM2835_CLOCK_VPU>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
+			status = "okay";	// [seolryeong] add status to spi
 		};
 
 		i2c0: i2c@7e205000 {
