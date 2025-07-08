@@ -502,14 +502,25 @@ static void lis3lv02d_joystick_close(struct input_dev *input)
 		pm_runtime_put(lis3->pm_dev);
 }
 
+
+// [seolryeong : start]
+#define CLICK_DEBOUNCE_MS 100
+static unsigned long last_jiffies = 0;
+
 static irqreturn_t lis302dl_interrupt(int irq, void *data)
 {
 	struct lis3lv02d *lis3 = data;
 	
-	// [seolryeong : start]
+	unsigned long now = jiffies;
+	if (time_before(now, last_jiffies + msecs_to_jiffies(CLICK_DEBOUNCE_MS))) {
+		//printk("[seolryeong : debug] ignore extra input\n");
+		return (IRQ_NONE);
+	}
+	last_jiffies = now;
+
 	int_condition = 1;
 	wake_up_interruptible(&int_wait);
-	// [seolryeong : end]
+// [seolryeong : end]
 
 #if 0
 	if (!test_bit(0, &lis3->misc_opened))
@@ -1150,7 +1161,7 @@ EXPORT_SYMBOL_GPL(lis3lv02d_init_dt);
 // [seolryeong : start]
 static ssize_t sr_dev_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos) {
         int ret = wait_event_interruptible(int_wait, int_condition == 1);
-        int_condition = 0;
+	int_condition = 0;
         return (0);
 }
 
@@ -1259,7 +1270,8 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
 	}
 
         // [seolryeong : start] accelerometer IRQ enable
-        irq_key1 = gpio_to_irq(GPIO_ACCEL);
+	irq_key1 = gpio_to_irq(GPIO_ACCEL);
+	
 	if (irq_key1)
                 lis3->irq = irq_key1;
         
@@ -1277,7 +1289,6 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
                 printk("[seolryeong : debug] can't add device %d\n", ret1);
         }
 	// [seolryeong : end]
-
 
 	/* bail if we did not get an IRQ from the bus layer */
 	if (!lis3->irq) {
